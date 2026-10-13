@@ -188,7 +188,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1 1 160px;
+  flex: 1 1 150px;
   min-width: 0;
   position: relative;
 }
@@ -198,7 +198,7 @@ h1 {
 }
 
 .campo.campo-uf {
-  flex-basis: 180px;
+  flex-basis: 170px;
 }
 
 .campo.estreito {

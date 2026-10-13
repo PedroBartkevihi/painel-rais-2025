@@ -11,6 +11,7 @@ const estado = { uf: '', regiao: '', municipio: '', cbo: '', grupo: '', minimo: 
 
 let meta;
 let brasil;
+let gruposComDados = new Set();
 const nomeUf = {};
 let opcoesOcupacao = [];
 let opcoesMunicipio = [];
@@ -151,8 +152,10 @@ function preencherFiltros() {
     nomeUf[uf.sigla] = uf.nome;
     ui.uf.append(new Option(uf.nome, uf.sigla));
   }
+  // O grande grupo 0 (militares) não tem vínculos nos microdados públicos: só entram grupos com dados
+  gruposComDados = new Set(Object.keys(meta.ocupacoes).map((cbo) => cbo[0]));
   for (const [id, descricao] of Object.entries(meta.grupos).sort(([a], [b]) => a.localeCompare(b))) {
-    ui.grupo.append(new Option(`${id} · ${descricao}`, id));
+    if (gruposComDados.has(id)) ui.grupo.append(new Option(`${id} · ${descricao}`, id));
   }
 
   opcoesOcupacao = Object.entries(meta.ocupacoes)
@@ -244,7 +247,7 @@ function lerHash() {
   const cbo = p.get('cbo') ?? '';
   estado.cbo = meta.ocupacoes[cbo] ? cbo : '';
   const grupo = p.get('grupo') ?? '';
-  estado.grupo = meta.grupos[grupo] ? grupo : '';
+  estado.grupo = gruposComDados.has(grupo) ? grupo : '';
   const minimo = Number(p.get('min'));
   estado.minimo = MINIMOS.includes(minimo) ? minimo : MINIMO_PADRAO;
   estado.ordemSub = p.get('ordem') === 'q' ? 'q' : 'md';
@@ -563,7 +566,10 @@ function ligarEventos() {
   ui.regiao.addEventListener('change', () => irPara({ regiao: ui.regiao.value, municipio: '' }));
   ui.grupo.addEventListener('change', () => irPara({ grupo: ui.grupo.value }));
   ui.minimo.addEventListener('change', () => irPara({ minimo: Number(ui.minimo.value) }));
-  ui.limpar.addEventListener('click', () => irPara({ uf: '', regiao: '', municipio: '', cbo: '', grupo: '', minimo: MINIMO_PADRAO, ordemSub: 'md' }));
+  ui.limpar.addEventListener('click', () => {
+    document.querySelectorAll('.tabela-acoes .busca').forEach((busca) => { busca.value = ''; });
+    irPara({ uf: '', regiao: '', municipio: '', cbo: '', grupo: '', minimo: MINIMO_PADRAO, ordemSub: 'md' });
+  });
   ui.alternador.forEach((botao) => botao.addEventListener('click', () => irPara({ ordemSub: botao.dataset.ordem })));
 
   $('#csv-ocupacoes').addEventListener('click', () => {
@@ -571,7 +577,7 @@ function ligarEventos() {
     baixarCsv(
       `rais2025_ocupacoes_${normalizar(territorioCsv).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}.csv`,
       ['TERRITORIO', 'CBO2002', 'TITULO', 'MEDIA', 'QTDE', 'MEDIANA'],
-      tabelaOcupacoes.visiveis().map((l) => [territorioCsv, l.cbo, l.titulo, l.me, l.q, l.md]),
+      tabelaOcupacoes.visiveis().map((l) => [territorioCsv, l.cbo, l.titulo, fmt.decimalCsv(l.me), l.q, fmt.decimalCsv(l.md)]),
     );
   });
 
@@ -580,7 +586,7 @@ function ligarEventos() {
     baixarCsv(
       `rais2025_${estado.cbo}_municipios.csv`,
       ['UF', 'REGIAO', 'MUNICIPIO', 'CBO2002', 'TITULO', 'MEDIA', 'QTDE', 'MEDIANA'],
-      tabelaDetalhe.visiveis().map((l) => [l.uf, l.regiao, l.municipio, estado.cbo, titulo, l.me, l.q, l.md]),
+      tabelaDetalhe.visiveis().map((l) => [l.uf, l.regiao, l.municipio, estado.cbo, titulo, fmt.decimalCsv(l.me), l.q, fmt.decimalCsv(l.md)]),
     );
   });
 

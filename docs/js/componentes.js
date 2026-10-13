@@ -12,6 +12,7 @@ export const fmt = {
   inteiro: (v) => inteiro.format(v),
   percentual: (v) => percentual.format(v),
   proporcao: (v) => proporcao.format(v),
+  decimalCsv: (v) => v.toFixed(2).replace('.', ','),
   cbo: (c) => `${c.slice(0, 4)}-${c.slice(4)}`,
 };
 

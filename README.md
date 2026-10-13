@@ -85,6 +85,7 @@ python -m venv .venv
 - A RAIS cobre só o **emprego formal** (CLT, estatutários, temporários etc.). Trabalho informal, autônomos e MEIs ficam de fora.
 - O município é o do **estabelecimento empregador**. Desde 2023 a RAIS quase não informa o município onde o trabalho é feito, então empresas com sede em uma cidade e equipes em outra concentram os vínculos na sede.
 - A ocupação (CBO) é **declarada pelo empregador**.
+- Os microdados públicos de 2025 não trazem vínculos do **grande grupo 0** da CBO (forças armadas, policiais e bombeiros militares).
 - Os valores são **nominais de 2025**, sem correção pela inflação.
 - Cruzamentos com poucos vínculos variam muito: use o filtro de mínimo de vínculos.
 
