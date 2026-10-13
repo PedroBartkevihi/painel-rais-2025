@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Remunerações por Profissão · RAIS 2025</title>
+  <meta name="description" content="Remuneração média, mediana e número de vínculos de cada ocupação (CBO 2002) no Brasil, por UF, região imediata e município, a partir da RAIS 2025.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Crect x='7' y='17' width='4' height='8' rx='1' fill='%23fff'/%3E%3Crect x='14' y='11' width='4' height='14' rx='1' fill='%23fff'/%3E%3Crect x='21' y='7' width='4' height='18' rx='1' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/painel.css">
+  <script>
+    try {
+      const tema = localStorage.getItem('tema');
+      if (tema === 'light' || tema === 'dark') document.documentElement.dataset.theme = tema;
+    } catch (e) {}
+  </script>
+  <script type="module" src="js/painel.js"></script>
+</head>
+<body>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="topo">
+    <div class="topo-texto">
+      <p class="sobretitulo">RAIS 2025 · Base dos Dados</p>
+      <h1>Remunerações por Profissão (CBO)</h1>
+      <p class="subtitulo">Quanto se ganha em cada ocupação, em cada lugar do Brasil: média, mediana e número de vínculos formais ativos em 31/12/2025.</p>
+    </div>
+    <button id="tema" class="botao-icone" type="button" aria-label="Alternar entre tema claro e escuro" title="Alternar tema">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
+    </button>
+  </header>
+
+  <form class="filtros" id="filtros" role="search" aria-label="Filtros do painel" autocomplete="off">
+    <label class="campo campo-uf">
+      <span class="campo-rotulo">UF</span>
+      <select id="f-uf"><option value="">Brasil (todas)</option></select>
+    </label>
+    <label class="campo">
+      <span class="campo-rotulo">Região imediata</span>
+      <select id="f-regiao" disabled><option value="">Todas</option></select>
+    </label>
+    <div class="campo combobox campo-municipio" id="c-municipio">
+      <label class="campo-rotulo" for="f-municipio">Município</label>
+      <input id="f-municipio" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="l-municipio" placeholder="Buscar município" spellcheck="false">
+      <ul id="l-municipio" class="combobox-lista" role="listbox" aria-label="Municípios" hidden></ul>
+    </div>
+    <div class="campo combobox largo" id="c-ocupacao">
+      <label class="campo-rotulo" for="f-ocupacao">Ocupação (cargo)</label>
+      <input id="f-ocupacao" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="l-ocupacao" placeholder="Nome ou código CBO" spellcheck="false">
+      <ul id="l-ocupacao" class="combobox-lista" role="listbox" aria-label="Ocupações" hidden></ul>
+    </div>
+    <label class="campo">
+      <span class="campo-rotulo">Grande grupo CBO</span>
+      <select id="f-grupo"><option value="">Todos</option></select>
+    </label>
+    <label class="campo estreito">
+      <span class="campo-rotulo">Mín. de vínculos</span>
+      <select id="f-minimo">
+        <option value="1">1</option>
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="30">30</option>
+        <option value="100">100</option>
+      </select>
+    </label>
+    <button type="button" id="limpar" class="botao-secundario">Limpar filtros</button>
+  </form>
+
+  <main id="conteudo" class="carregando">
+    <nav class="contexto" id="contexto" aria-label="Seleção atual"></nav>
+
+    <section class="kpis" id="kpis" aria-label="Indicadores da seleção" aria-live="polite"></section>
+
+    <section class="secao" id="secao-ocupacao" hidden>
+      <header class="secao-cabecalho">
+        <h2 id="titulo-ocupacao"></h2>
+        <p class="secao-descricao" id="descricao-ocupacao"></p>
+      </header>
+      <div class="grade-graficos" id="grade-ocupacao">
+        <figure class="cartao" id="cartao-niveis">
+          <figcaption class="cartao-titulo">
+            <h3>Comparação entre níveis</h3>
+            <p class="cartao-subtitulo">Mesma ocupação no município, na região, na UF e no Brasil</p>
+          </figcaption>
+          <div class="legenda" aria-hidden="true"><span class="chave chave-barra"></span>Mediana <span class="chave chave-marca"></span>Média</div>
+          <div class="barras" id="g-niveis"></div>
+        </figure>
+        <figure class="cartao" id="cartao-sub">
+          <figcaption class="cartao-titulo">
+            <div>
+              <h3 id="titulo-sub"></h3>
+              <p class="cartao-subtitulo" id="subtitulo-sub"></p>
+            </div>
+            <div class="alternador" role="group" aria-label="Ordenar gráfico por">
+              <button type="button" data-ordem="md" aria-pressed="true">Maior mediana</button>
+              <button type="button" data-ordem="q" aria-pressed="false">Mais vínculos</button>
+            </div>
+          </figcaption>
+          <div class="legenda" aria-hidden="true"><span class="chave chave-barra"></span>Mediana <span class="chave chave-marca"></span>Média</div>
+          <div class="barras" id="g-sub"></div>
+        </figure>
+      </div>
+      <div class="cartao cartao-tabela">
+        <div class="tabela-topo">
+          <h3 id="titulo-detalhe">Onde trabalham</h3>
+          <div class="tabela-acoes">
+            <input type="search" id="busca-detalhe" class="busca" placeholder="Filtrar município, região ou UF" aria-label="Filtrar tabela de municípios">
+            <button type="button" class="botao-secundario" id="csv-detalhe">Baixar CSV</button>
+          </div>
+        </div>
+        <div class="tabela-rolagem">
+          <table class="tabela" id="t-detalhe">
+            <thead>
+              <tr>
+                <th scope="col"><button type="button" data-coluna="uf">UF</button></th>
+                <th scope="col"><button type="button" data-coluna="regiao">Região imediata</button></th>
+                <th scope="col"><button type="button" data-coluna="municipio">Município</button></th>
+                <th scope="col" class="num"><button type="button" data-coluna="q">Vínculos</button></th>
+                <th scope="col" class="num"><button type="button" data-coluna="me">Média</button></th>
+                <th scope="col" class="num"><button type="button" data-coluna="md">Mediana</button></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="tabela-rodape" id="rodape-detalhe"></div>
+      </div>
+    </section>
+
+    <section class="secao" id="secao-territorio">
+      <header class="secao-cabecalho">
+        <h2 id="titulo-territorio"></h2>
+        <p class="secao-descricao" id="descricao-territorio"></p>
+      </header>
+      <div class="grade-graficos">
+        <figure class="cartao">
+          <figcaption class="cartao-titulo">
+            <h3>Maiores medianas</h3>
+            <p class="cartao-subtitulo" id="subtitulo-medianas"></p>
+          </figcaption>
+          <div class="barras" id="g-medianas"></div>
+        </figure>
+        <figure class="cartao">
+          <figcaption class="cartao-titulo">
+            <h3>Ocupações que mais empregam</h3>
+            <p class="cartao-subtitulo">Vínculos ativos em 31/12/2025</p>
+          </figcaption>
+          <div class="barras" id="g-empregos"></div>
+        </figure>
+      </div>
+      <div class="cartao cartao-tabela">
+        <div class="tabela-topo">
+          <h3 id="titulo-tabela">Todas as ocupações</h3>
+          <div class="tabela-acoes">
+            <input type="search" id="busca-ocupacoes" class="busca" placeholder="Filtrar ocupação ou código" aria-label="Filtrar tabela de ocupações">
+            <button type="button" class="botao-secundario" id="csv-ocupacoes">Baixar CSV</button>
+          </div>
+        </div>
+        <div class="tabela-rolagem">
+          <table class="tabela" id="t-ocupacoes">
+            <thead>
+              <tr>
+                <th scope="col"><button type="button" data-coluna="titulo">Ocupação</button></th>
+                <th scope="col"><button type="button" data-coluna="cbo">CBO</button></th>
+                <th scope="col" class="num"><button type="button" data-coluna="q">Vínculos</button></th>
+                <th scope="col" class="num"><button type="button" data-coluna="me">Média</button></th>
+                <th scope="col" class="num"><button type="button" data-coluna="md">Mediana</button></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="tabela-rodape" id="rodape-ocupacoes"></div>
+      </div>
+    </section>
+
+    <section class="secao" id="sobre">
+      <header class="secao-cabecalho">
+        <h2>Sobre os dados</h2>
+      </header>
+      <div class="grade-sobre">
+        <div class="cartao texto">
+          <h3>Como os números foram calculados</h3>
+          <ul>
+            <li><strong>Fonte:</strong> microdados públicos de vínculos da RAIS 2025 (Ministério do Trabalho e Emprego), tabela <code>br_me_rais.microdados_vinculos</code> da <a href="https://basedosdados.org/dataset/3e7c4d58-96ba-448e-b053-d385a829ef00" target="_blank" rel="noopener">Base dos Dados</a>, consultada no BigQuery.</li>
+            <li><strong>Universo:</strong> vínculos ativos em 31/12/2025 com remuneração no ano, em município e ocupação válidos.</li>
+            <li><strong>Remuneração:</strong> remuneração média mensal nominal do vínculo no ano (R$), sem correção pela inflação. Inclui horas extras, adicionais e comissões; não inclui o 13º salário.</li>
+            <li><strong>Média × mediana:</strong> a mediana é o valor do meio: metade dos vínculos ganha menos e metade ganha mais. Ela é menos afetada por salários muito altos ou por erros de digitação. Quando a média fica bem acima da mediana, poucos salários altos estão puxando a média.</li>
+            <li><strong>Mediana exata em cada nível:</strong> a mediana não pode ser somada nem tirada da média das medianas dos municípios. Por isso ela foi calculada separadamente para o Brasil, para cada UF, cada região imediata e cada município.</li>
+            <li><strong>Região:</strong> Região Geográfica Imediata do IBGE (2017).</li>
+            <li><strong>Poucos vínculos:</strong> valores calculados com menos de 5 vínculos levam o selo <span class="selo">poucos dados</span> e devem ser lidos com cautela. O filtro "Mín. de vínculos" esconde esses casos dos rankings e das tabelas.</li>
+          </ul>
+        </div>
+        <div class="cartao texto">
+          <h3>Do microdado ao painel</h3>
+          <ol class="funil" id="funil"></ol>
+          <h3>Baixar a base tratada</h3>
+          <ul class="downloads">
+            <li><a href="downloads/rais2025_remuneracao_cbo_municipio.csv.zip" download>rais2025_remuneracao_cbo_municipio.csv.zip</a><span>Formato UF, REGIAO, MUNICIPIO, CBO2002, TITULO, MEDIA, QTDE, MEDIANA</span></li>
+            <li><a href="downloads/rais2025_remuneracao_cbo_niveis.parquet" download>rais2025_remuneracao_cbo_niveis.parquet</a><span>Todos os níveis (Brasil, UF, região, município), com códigos IBGE</span></li>
+            <li><a href="https://github.com/PedroBartkevihi/painel-rais-2025" target="_blank" rel="noopener">github.com/PedroBartkevihi/painel-rais-2025</a><span>Consultas SQL, scripts de tratamento e documentação</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <p>Fonte: RAIS 2025 (MTE), via Base dos Dados. Valores nominais em R$. <span id="gerado-em"></span></p>
+  </footer>
+
+  <div id="dica" class="dica" role="tooltip" hidden></div>
+</body>
+</html>
